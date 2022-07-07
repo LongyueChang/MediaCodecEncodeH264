@@ -17,7 +17,16 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
+        jcenter() // Warning: this repository is going to shut down soon
+        maven {
+            credentials {
+                username 'changyl@yunxi.tv'
+                password 'yEqzKef5u_QxTvyNz9Bs'
+            }
+            url "https://nexus.yunxi.tv/repository/android/"
+        }
+        maven { url 'https://gitee.com/liuchaoya/libcommon/raw/master/repository/' }
 
     }
 }

@@ -7,7 +7,9 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
@@ -22,9 +24,15 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+
+import com.example.mediacodecencode.data.MediaConstant;
+import com.example.mediacodecencode.ipc.MyCClient;
+import com.yunxi.ipc.bean.EventData;
+import com.yunxi.ipc.bean.EventMsg;
 
 public class MainActivity extends Activity  implements SurfaceHolder.Callback,PreviewCallback{
-
+    private final String TAG = "ENCODE_MainActivity";
 	private SurfaceView surfaceview;
 	
     private SurfaceHolder surfaceHolder;
@@ -33,25 +41,27 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
 	
     private Parameters parameters;
     
-    int width = 640;
+    int width = 1280;
     
-    int height = 480;
+    int height = 720;
     
-    int framerate = 24;
+    int framerate = 30;
     
     int biterate = 8500*1000;
     
-    private static int yuvqueuesize = 10;
+//    private static int yuvqueuesize = 10;
+    private boolean isRemote = true;
     
-	public static ArrayBlockingQueue<byte[]> YUVQueue = new ArrayBlockingQueue<byte[]>(yuvqueuesize); 
+//	public static ArrayBlockingQueue<byte[]> YUVQueue = new ArrayBlockingQueue<byte[]>(yuvqueuesize);
 	
 	private AvcEncoder avcCodec;
     private final static int CAMERA_OK = 10001;
     private static String[] PERMISSIONS_STORAGE = {
             "android.permission.CAMERA",
             "android.permission.WRITE_EXTERNAL_STORAGE" };
-	
-	@Override
+    private Context context;
+
+    @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
@@ -71,8 +81,11 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
 	}
 
 	private void init(){
+        context = this.getBaseContext();
         surfaceHolder = surfaceview.getHolder();
         surfaceHolder.addCallback(this);
+
+        MyCClient.getInstance(this).init(pushCall);
     }
 
 
@@ -128,18 +141,35 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         camera = getBackCamera();
         startcamera(camera);
-        avcCodec = new AvcEncoder(this.width,this.height,framerate,biterate);
-        avcCodec.StartEncoderThread();
+        Log.d(TAG,"startcamera");
+        if(isRemote){
+            Bundle bundle = new Bundle();
+            bundle.putInt(MediaConstant.MSG.WIDTH,this.width);
+            bundle.putInt(MediaConstant.MSG.HEIGHT,this.height);
+            bundle.putInt(MediaConstant.MSG.FRAMERATE,this.framerate);
+            bundle.putInt(MediaConstant.MSG.BITRATE,this.biterate);
+            MyCClient.getInstance(context).callCommand(MediaConstant.MSG.START_ENCODE,bundle);
+        } else {
+            avcCodec = new AvcEncoder(this.width,this.height,framerate,biterate);
+            avcCodec.StartEncoderThread();
+        }
+
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        Log.d(TAG,"stopPreview");
         if (null != camera) {
         	camera.setPreviewCallback(null);
         	camera.stopPreview();
             camera.release();
             camera = null;
-            avcCodec.StopThread();
+
+            if(isRemote){
+                MyCClient.getInstance(context).callCommand(MediaConstant.MSG.STOP_ENCODE,null);
+            } else {
+                avcCodec.StopThread();
+            }
         }
     }
 
@@ -147,14 +177,24 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
 	@Override
 	public void onPreviewFrame(byte[] data, android.hardware.Camera camera) {
 		// TODO Auto-generated method stub
-		putYUVData(data,data.length);
+//        if(isRemote){
+//            Bundle bundle = new Bundle();
+////            bundle.putByteArray(MediaConstant.MSG.FRAME_DATA,data);
+//            bundle.putInt(MediaConstant.MSG.FRAME_LENGTH,data.length);
+//            EventData eventData = new EventData(MediaConstant.MSG.ON_FRAME);
+//            eventData.setData(bundle);
+//            eventData.setBigData(data);
+//            MyCClient.getInstance(context).callCommand(eventData);
+//        } else {
+            putYUVData(data,data.length);
+//        }
 	}
 	
 	public void putYUVData(byte[] buffer, int length) {
-		if (YUVQueue.size() >= 10) {
-			YUVQueue.poll();
+		if (MediaConstant.YUVQueue.size() >= 10) {
+            MediaConstant.YUVQueue.poll();
 		}
-		YUVQueue.add(buffer);
+        MediaConstant.YUVQueue.add(buffer);
 	}
 	
 	@SuppressLint("NewApi")
@@ -165,6 +205,7 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
 	
 				String[] types = codecInfo.getSupportedTypes();
 				for (int i = 0; i < types.length; i++) {
+				    Log.d(TAG,"encode types:"+types[i]);
 					if (types[i].equalsIgnoreCase("video/avc")) {
 						return true;
 					}
@@ -196,6 +237,7 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
         }
     }
 
+
     @TargetApi(9)
 	private Camera getBackCamera() {
         Camera c = null;
@@ -208,4 +250,54 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
     }
 
 
+    private  Intent intent;
+    public void onClick(View view) {
+        switch (view.getId()){
+            case R.id.test1:
+                intent = new Intent();
+                intent.setClassName(this,"com.example.mediacodecencode.MediaEncodeService");
+                intent.setAction("com.wt.stream.media");
+//            startService(intent);
+                startForegroundService(intent);
+                break;
+            case R.id.test2:
+                Log.d(TAG,"start encode");
+                Bundle bundle = new Bundle();
+                bundle.putInt(MediaConstant.MSG.WIDTH,this.width);
+                bundle.putInt(MediaConstant.MSG.HEIGHT,this.height);
+                bundle.putInt(MediaConstant.MSG.FRAMERATE,this.framerate);
+                bundle.putInt(MediaConstant.MSG.BITRATE,this.biterate);
+                MyCClient.getInstance(context).callCommand(MediaConstant.MSG.START_ENCODE,bundle);
+
+                break;
+            case R.id.test3:
+                Log.d(TAG,"stop encode");
+                MyCClient.getInstance(context).callCommand(MediaConstant.MSG.STOP_ENCODE,null);
+                break;
+            default:break;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopService(intent);
+    }
+
+    public final MyCClient.OnPushCall pushCall = new MyCClient.OnPushCall() {
+        @Override
+        public void pushMsg(String topic, EventMsg eventMsg) {
+            Log.d(TAG, "topic:" + topic);
+            if (MediaConstant.MSG.TOPIC.equals(topic)) {
+                switch (eventMsg.getMsgId()) {
+//                    case MediaConstant.MSG.ON_PREPARE_ENCODE:
+//                        break;
+                    default:
+                        break;
+                }
+
+            }
+
+        }
+    };
 }

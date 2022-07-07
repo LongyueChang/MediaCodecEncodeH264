@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
@@ -21,6 +23,24 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+<!--        android:process=":media"-->
+        <service android:name="com.example.mediacodecencode.MediaEncodeService"
+
+            android:priority="1000"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.wt.stream.media"/>
+            </intent-filter>
+        </service>
+
+<!--        android:process=":media"-->
+        <provider
+
+            android:authorities="com.wt.ipc.sev"
+            android:name="com.example.mediacodecencode.EncodeProvider"
+            android:exported="true"/>
     </application>
 
 </manifest>
