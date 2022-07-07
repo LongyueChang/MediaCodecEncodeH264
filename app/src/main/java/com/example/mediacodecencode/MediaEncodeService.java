@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 
 
@@ -25,6 +26,7 @@ public class MediaEncodeService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG,"MediaEncodeService tid:"+Thread.currentThread().getId());
         MediaSvc.getInstance(this).init();
     }
 

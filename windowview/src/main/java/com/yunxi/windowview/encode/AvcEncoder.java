@@ -1,4 +1,4 @@
-package com.example.mediacodecencode;
+package com.yunxi.windowview.encode;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -12,8 +12,8 @@ import android.media.MediaFormat;
 import android.os.Environment;
 import android.util.Log;
 
-import com.example.mediacodecencode.data.MediaConstant;
-import com.example.mediacodecencode.utils.FpsCounter;
+import com.yunxi.windowview.data.MediaConstant;
+import com.yunxi.windowview.utils.FpsCounter;
 
 
 public class AvcEncoder

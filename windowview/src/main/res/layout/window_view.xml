@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.yunxi.windowview.ForeverMarqueeTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/tv"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="left|center"
+    android:ellipsize="marquee"
+    android:focusable="true"
+    android:gravity="left|center"
+    android:marqueeRepeatLimit="marquee_forever"
+    android:singleLine="true"
+    android:minHeight="40dp"
+    android:scrollHorizontally="true"
+    android:text="you can click me to jump! click me!! clicke me! click!!!click!!!click!!!"
+    android:textColor="#FF4081"
+    android:textScaleX="1.0"
+    android:textSize="15sp"
+    tools:ignore="MissingDefaultResource">
+
+</com.yunxi.windowview.ForeverMarqueeTextView>

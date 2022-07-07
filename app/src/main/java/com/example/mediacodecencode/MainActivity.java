@@ -1,8 +1,7 @@
 package com.example.mediacodecencode;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.concurrent.ArrayBlockingQueue;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -17,21 +16,24 @@ import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PreviewCallback;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.Toast;
 
-import com.example.mediacodecencode.data.MediaConstant;
+import com.yunxi.windowview.data.MediaConstant;
 import com.example.mediacodecencode.ipc.MyCClient;
-import com.yunxi.ipc.bean.EventData;
 import com.yunxi.ipc.bean.EventMsg;
+import com.yunxi.windowview.encode.AvcEncoder;
 
-public class MainActivity extends Activity  implements SurfaceHolder.Callback,PreviewCallback{
+public class MainActivity extends Activity  {
     private final String TAG = "ENCODE_MainActivity";
 	private SurfaceView surfaceview;
 	
@@ -53,7 +55,7 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
     private boolean isRemote = true;
     
 //	public static ArrayBlockingQueue<byte[]> YUVQueue = new ArrayBlockingQueue<byte[]>(yuvqueuesize);
-	
+
 	private AvcEncoder avcCodec;
     private final static int CAMERA_OK = 10001;
     private static String[] PERMISSIONS_STORAGE = {
@@ -81,9 +83,10 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
 	}
 
 	private void init(){
+        requestPermission(1);
         context = this.getBaseContext();
-        surfaceHolder = surfaceview.getHolder();
-        surfaceHolder.addCallback(this);
+//        surfaceHolder = surfaceview.getHolder();
+//        surfaceHolder.addCallback(this);
 
         MyCClient.getInstance(this).init(pushCall);
     }
@@ -131,71 +134,71 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
 
 
 
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-
-		
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        camera = getBackCamera();
-        startcamera(camera);
-        Log.d(TAG,"startcamera");
-        if(isRemote){
-            Bundle bundle = new Bundle();
-            bundle.putInt(MediaConstant.MSG.WIDTH,this.width);
-            bundle.putInt(MediaConstant.MSG.HEIGHT,this.height);
-            bundle.putInt(MediaConstant.MSG.FRAMERATE,this.framerate);
-            bundle.putInt(MediaConstant.MSG.BITRATE,this.biterate);
-            MyCClient.getInstance(context).callCommand(MediaConstant.MSG.START_ENCODE,bundle);
-        } else {
-            avcCodec = new AvcEncoder(this.width,this.height,framerate,biterate);
-            avcCodec.StartEncoderThread();
-        }
-
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        Log.d(TAG,"stopPreview");
-        if (null != camera) {
-        	camera.setPreviewCallback(null);
-        	camera.stopPreview();
-            camera.release();
-            camera = null;
-
-            if(isRemote){
-                MyCClient.getInstance(context).callCommand(MediaConstant.MSG.STOP_ENCODE,null);
-            } else {
-                avcCodec.StopThread();
-            }
-        }
-    }
-
-
-	@Override
-	public void onPreviewFrame(byte[] data, android.hardware.Camera camera) {
-		// TODO Auto-generated method stub
+//    @Override
+//    public void surfaceCreated(SurfaceHolder holder) {
+//
+//
+//    }
+//
+//    @Override
+//    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+//        camera = getBackCamera();
+//        startcamera(camera);
+//        Log.d(TAG,"startcamera");
 //        if(isRemote){
 //            Bundle bundle = new Bundle();
-////            bundle.putByteArray(MediaConstant.MSG.FRAME_DATA,data);
-//            bundle.putInt(MediaConstant.MSG.FRAME_LENGTH,data.length);
-//            EventData eventData = new EventData(MediaConstant.MSG.ON_FRAME);
-//            eventData.setData(bundle);
-//            eventData.setBigData(data);
-//            MyCClient.getInstance(context).callCommand(eventData);
+//            bundle.putInt(MediaConstant.MSG.WIDTH,this.width);
+//            bundle.putInt(MediaConstant.MSG.HEIGHT,this.height);
+//            bundle.putInt(MediaConstant.MSG.FRAMERATE,this.framerate);
+//            bundle.putInt(MediaConstant.MSG.BITRATE,this.biterate);
+//            MyCClient.getInstance(context).callCommand(MediaConstant.MSG.START_ENCODE,bundle);
 //        } else {
-            putYUVData(data,data.length);
+//            avcCodec = new AvcEncoder(this.width,this.height,framerate,biterate);
+//            avcCodec.StartEncoderThread();
 //        }
-	}
-	
-	public void putYUVData(byte[] buffer, int length) {
-		if (MediaConstant.YUVQueue.size() >= 10) {
-            MediaConstant.YUVQueue.poll();
-		}
-        MediaConstant.YUVQueue.add(buffer);
-	}
+//
+//    }
+//
+//    @Override
+//    public void surfaceDestroyed(SurfaceHolder holder) {
+//        Log.d(TAG,"stopPreview");
+//        if (null != camera) {
+//        	camera.setPreviewCallback(null);
+//        	camera.stopPreview();
+//            camera.release();
+//            camera = null;
+//
+//            if(isRemote){
+//                MyCClient.getInstance(context).callCommand(MediaConstant.MSG.STOP_ENCODE,null);
+//            } else {
+//                avcCodec.StopThread();
+//            }
+//        }
+//    }
+//
+//
+//	@Override
+//	public void onPreviewFrame(byte[] data, android.hardware.Camera camera) {
+//		// TODO Auto-generated method stub
+////        if(isRemote){
+////            Bundle bundle = new Bundle();
+//////            bundle.putByteArray(MediaConstant.MSG.FRAME_DATA,data);
+////            bundle.putInt(MediaConstant.MSG.FRAME_LENGTH,data.length);
+////            EventData eventData = new EventData(MediaConstant.MSG.ON_FRAME);
+////            eventData.setData(bundle);
+////            eventData.setBigData(data);
+////            MyCClient.getInstance(context).callCommand(eventData);
+////        } else {
+//            putYUVData(data,data.length);
+////        }
+//	}
+//
+//	public void putYUVData(byte[] buffer, int length) {
+//		if (MediaConstant.YUVQueue.size() >= 10) {
+//            MediaConstant.YUVQueue.poll();
+//		}
+//        MediaConstant.YUVQueue.add(buffer);
+//	}
 	
 	@SuppressLint("NewApi")
 	private boolean SupportAvcCodec(){
@@ -216,38 +219,38 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
 	}
 	
 
-    private void startcamera(Camera mCamera){
-        if(mCamera != null){
-            try {
-                mCamera.setPreviewCallback(this);
-                mCamera.setDisplayOrientation(90);
-                if(parameters == null){
-                    parameters = mCamera.getParameters();
-                }
-                parameters = mCamera.getParameters();
-                parameters.setPreviewFormat(ImageFormat.NV21);
-                parameters.setPreviewSize(width, height);
-                mCamera.setParameters(parameters);
-                mCamera.setPreviewDisplay(surfaceHolder);
-                mCamera.startPreview();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-
-    @TargetApi(9)
-	private Camera getBackCamera() {
-        Camera c = null;
-        try {
-            c = Camera.open(0); // attempt to get a Camera instance
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return c; // returns null if camera is unavailable
-    }
+//    private void startcamera(Camera mCamera){
+//        if(mCamera != null){
+//            try {
+//                mCamera.setPreviewCallback(this);
+//                mCamera.setDisplayOrientation(90);
+//                if(parameters == null){
+//                    parameters = mCamera.getParameters();
+//                }
+//                parameters = mCamera.getParameters();
+//                parameters.setPreviewFormat(ImageFormat.NV21);
+//                parameters.setPreviewSize(width, height);
+//                mCamera.setParameters(parameters);
+//                mCamera.setPreviewDisplay(surfaceHolder);
+//                mCamera.startPreview();
+//
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
+//
+//
+//    @TargetApi(9)
+//	private Camera getBackCamera() {
+//        Camera c = null;
+//        try {
+//            c = Camera.open(0); // attempt to get a Camera instance
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return c; // returns null if camera is unavailable
+//    }
 
 
     private  Intent intent;
@@ -282,6 +285,32 @@ public class MainActivity extends Activity  implements SurfaceHolder.Callback,Pr
     protected void onDestroy() {
         super.onDestroy();
         stopService(intent);
+    }
+
+    private void requestPermission(int requestCode) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            if(!Settings.canDrawOverlays(this)){
+                Toast.makeText(this, "can not DrawOverlays", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + this.getPackageName()));
+                startActivityForResult(intent, requestCode);
+            }
+        }
+    }
+
+
+    @TargetApi(Build.VERSION_CODES.M)
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == 1){
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "Permission Denieddd by user.Please Check it in Settings", Toast.LENGTH_SHORT).show();
+            }
+        } else if (requestCode == 2) {
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "Permission Denieddd by user.Please Check it in Settings", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     public final MyCClient.OnPushCall pushCall = new MyCClient.OnPushCall() {

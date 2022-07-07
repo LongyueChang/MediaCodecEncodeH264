@@ -8,7 +8,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.example.mediacodecencode.data.MediaConstant;
+import com.yunxi.windowview.data.MediaConstant;
 import com.yunxi.ipc.ClientPushManager;
 import com.yunxi.ipc.IPushCallBack;
 import com.yunxi.ipc.IpcClient;

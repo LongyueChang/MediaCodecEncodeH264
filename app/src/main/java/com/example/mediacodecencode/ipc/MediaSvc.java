@@ -2,19 +2,19 @@ package com.example.mediacodecencode.ipc;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 
-import com.example.mediacodecencode.AvcEncoder;
-import com.example.mediacodecencode.data.MediaConstant;
+import com.yunxi.windowview.encode.AvcEncoder;
+import com.yunxi.windowview.data.MediaConstant;
 import com.yunxi.ipc.IpcSev;
 import com.yunxi.ipc.PushSevManager;
 import com.yunxi.ipc.bean.EventData;
-import com.yunxi.ipc.bean.EventMsg;
 import com.yunxi.ipc.utils.LogUtils;
+import com.yunxi.windowview.VideoUtils;
 
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 
 
@@ -27,7 +27,7 @@ public class MediaSvc extends IpcSev {
     private String HOST = "1000";
     private static final Object object = new Object();
     private static MediaSvc instance;
-
+    private Handler mH;
     private AvcEncoder avcCodec;
     private final static int yuvqueuesize = 10;
     public static ArrayBlockingQueue<byte[]> YUVQueue = new ArrayBlockingQueue<byte[]>(yuvqueuesize);
@@ -47,12 +47,14 @@ public class MediaSvc extends IpcSev {
         super(context, version);
         LogUtils.setEnv(LogUtils.INFO);
         mContext = context;
+
     }
 
 
     @Override
     public void init() {
         super.init();
+        mH = new Handler(Looper.getMainLooper());
 
 //        new Timer().scheduleAtFixedRate(new TimerTask() {
 //            @Override
@@ -104,15 +106,33 @@ public class MediaSvc extends IpcSev {
         switch (code) {
             case MediaConstant.MSG.START_ENCODE:
                 Log.d(TAG,"data:"+data.toString());
-                int width = data.getInt(MediaConstant.MSG.WIDTH);
-                int height = data.getInt(MediaConstant.MSG.HEIGHT);
-                int framerate = data.getInt(MediaConstant.MSG.FRAMERATE);
-                int biterate = data.getInt(MediaConstant.MSG.BITRATE);
-                avcCodec = new AvcEncoder(width, height, framerate, biterate);
-                avcCodec.StartEncoderThread();
+//                int width = data.getInt(MediaConstant.MSG.WIDTH);
+//                int height = data.getInt(MediaConstant.MSG.HEIGHT);
+//                int framerate = data.getInt(MediaConstant.MSG.FRAMERATE);
+//                int biterate = data.getInt(MediaConstant.MSG.BITRATE);
+//                avcCodec = new AvcEncoder(width, height, framerate, biterate);
+//                avcCodec.StartEncoderThread();
+                Log.d(TAG,"START_ENCODE tid:"+Thread.currentThread().getId());
+                mH.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(TAG,"START_ENCODE post tid:"+Thread.currentThread().getId());
+                        VideoUtils.showVideo(mContext);
+                    }
+                });
+
                 break;
             case MediaConstant.MSG.STOP_ENCODE:
-                avcCodec.StopThread();
+//                avcCodec.StopThread();
+                Log.d(TAG,"STOP_ENCODE tid:"+Thread.currentThread().getId());
+                mH.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(TAG,"STOP_ENCODE post tid:"+Thread.currentThread().getId());
+                        VideoUtils.hideVideo();
+                    }
+                });
+
                 break;
 
 

@@ -26,7 +26,7 @@
 
 <!--        android:process=":media"-->
         <service android:name="com.example.mediacodecencode.MediaEncodeService"
-
+            android:process=":media"
             android:priority="1000"
             android:enabled="true"
             android:exported="true">
@@ -37,7 +37,7 @@
 
 <!--        android:process=":media"-->
         <provider
-
+            android:process=":media"
             android:authorities="com.wt.ipc.sev"
             android:name="com.example.mediacodecencode.EncodeProvider"
             android:exported="true"/>

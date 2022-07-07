@@ -29,4 +29,5 @@ dependencies {
 
 
     implementation 'com.yunxi.base:ipc:1.0.0-SNAPSHOT'
+    implementation project(":windowview")
 }
